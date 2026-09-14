@@ -1,0 +1,5 @@
+target/
+*.class
+.idea/
+*.iml
+parity/java_results.json

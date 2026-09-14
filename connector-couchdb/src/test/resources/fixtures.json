@@ -1,0 +1,411 @@
+[
+ {
+  "n": "kafka_key basic",
+  "mode": "kafka_key",
+  "field": "",
+  "tpl": "",
+  "key": "sensor.car_counts",
+  "doc": {
+   "timestamp": 1726300000.5,
+   "v": 1
+  }
+ },
+ {
+  "n": "kafka_key with slash",
+  "mode": "kafka_key",
+  "field": "",
+  "tpl": "",
+  "key": "a/b/c",
+  "doc": {
+   "timestamp": 1726300000
+  }
+ },
+ {
+  "n": "kafka_key missing",
+  "mode": "kafka_key",
+  "field": "",
+  "tpl": "",
+  "key": null,
+  "doc": {
+   "timestamp": 1726300000
+  }
+ },
+ {
+  "n": "kafka_key empty",
+  "mode": "kafka_key",
+  "field": "",
+  "tpl": "",
+  "key": "",
+  "doc": {
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "auto",
+  "mode": "auto",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "timestamp float",
+  "mode": "timestamp",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": 1726300000.987
+  }
+ },
+ {
+  "n": "timestamp string",
+  "mode": "timestamp",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": "1726300000.2"
+  }
+ },
+ {
+  "n": "timestamp negative",
+  "mode": "timestamp",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": -12.9
+  }
+ },
+ {
+  "n": "timestamp missing",
+  "mode": "timestamp",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "a": 1
+  }
+ },
+ {
+  "n": "timestamp garbage",
+  "mode": "timestamp",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": "abc"
+  }
+ },
+ {
+  "n": "timestamp_chat",
+  "mode": "timestamp_chat",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": 1726300000,
+   "chat_id": "The Whispers 2"
+  }
+ },
+ {
+  "n": "timestamp_chat no chat",
+  "mode": "timestamp_chat",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": 1726300000
+  }
+ },
+ {
+  "n": "timestamp_chat slash in chat",
+  "mode": "timestamp_chat",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": 5,
+   "chat_id": "a/b"
+  }
+ },
+ {
+  "n": "field flat",
+  "mode": "field",
+  "field": "entity_id",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "entity_id": "sensor.kiwi_weight",
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "field nested",
+  "mode": "field",
+  "field": "context.id",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "context": {
+    "id": "01HXYZ"
+   },
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "field nested missing",
+  "mode": "field",
+  "field": "context.id",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "context": {},
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "field blank value",
+  "mode": "field",
+  "field": "entity_id",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "entity_id": "   ",
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "field not specified",
+  "mode": "field",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "entity_id": "x"
+  }
+ },
+ {
+  "n": "field numeric",
+  "mode": "field",
+  "field": "n",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "n": 42
+  }
+ },
+ {
+  "n": "custom health-metrics",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{entity_id}:{last_updated}",
+  "key": "k",
+  "doc": {
+   "entity_id": "sensor.devin_s_s25_steps",
+   "last_updated": "2026-09-14T10:00:00+00:00"
+  }
+ },
+ {
+  "n": "custom int_ts chat",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{int_ts}:{chat_id}",
+  "key": "k",
+  "doc": {
+   "timestamp": 1726300000.4,
+   "chat_id": "grp"
+  }
+ },
+ {
+  "n": "custom missing ts leading colon",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{int_ts}:{chat_id}",
+  "key": "k",
+  "doc": {
+   "chat_id": "grp"
+  }
+ },
+ {
+  "n": "custom all empty",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{int_ts}{key}",
+  "key": "",
+  "doc": {}
+ },
+ {
+  "n": "custom unknown token",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{nope}",
+  "key": "k",
+  "doc": {
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "custom literal text",
+  "mode": "custom",
+  "field": "",
+  "tpl": "dev-{key}-x",
+  "key": "abc",
+  "doc": {
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "custom slash",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{key}",
+  "key": "p/q",
+  "doc": {
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "custom ts raw",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 1726300000.75
+  }
+ },
+ {
+  "n": "unknown mode",
+  "mode": "bogus",
+  "field": "",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "timestamp": 1
+  }
+ },
+ {
+  "n": "float big",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 1e+16
+  }
+ },
+ {
+  "n": "float just under sci",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 1000000000000000.0
+  }
+ },
+ {
+  "n": "float small",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 1e-05
+  }
+ },
+ {
+  "n": "float just over small",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 0.0001
+  }
+ },
+ {
+  "n": "float trailing zero",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 1726300000.0
+  }
+ },
+ {
+  "n": "float many digits",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 0.1
+  }
+ },
+ {
+  "n": "float third",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 0.3333333333333333
+  }
+ },
+ {
+  "n": "float negative",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": -2.5
+  }
+ },
+ {
+  "n": "float sci negative",
+  "mode": "custom",
+  "field": "",
+  "tpl": "{ts}",
+  "key": "k",
+  "doc": {
+   "timestamp": 1.5e-07
+  }
+ },
+ {
+  "n": "field float value",
+  "mode": "field",
+  "field": "v",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "v": 42.5
+  }
+ },
+ {
+  "n": "field float sci",
+  "mode": "field",
+  "field": "v",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "v": 1e+20
+  }
+ },
+ {
+  "n": "int stays int",
+  "mode": "field",
+  "field": "v",
+  "tpl": "",
+  "key": "k",
+  "doc": {
+   "v": 7
+  }
+ }
+]

@@ -1,0 +1,202 @@
+[
+ {
+  "n": "kafka_key basic",
+  "id": "sensor.car_counts",
+  "reason": "kafka_key"
+ },
+ {
+  "n": "kafka_key with slash",
+  "id": "a_b_c",
+  "reason": "kafka_key"
+ },
+ {
+  "n": "kafka_key missing",
+  "id": null,
+  "reason": "kafka_key:missing"
+ },
+ {
+  "n": "kafka_key empty",
+  "id": null,
+  "reason": "kafka_key:missing"
+ },
+ {
+  "n": "auto",
+  "id": null,
+  "reason": "auto"
+ },
+ {
+  "n": "timestamp float",
+  "id": "1726300000",
+  "reason": "timestamp"
+ },
+ {
+  "n": "timestamp string",
+  "id": "1726300000",
+  "reason": "timestamp"
+ },
+ {
+  "n": "timestamp negative",
+  "id": "-12",
+  "reason": "timestamp"
+ },
+ {
+  "n": "timestamp missing",
+  "id": null,
+  "reason": "timestamp:missing"
+ },
+ {
+  "n": "timestamp garbage",
+  "id": null,
+  "reason": "timestamp:missing"
+ },
+ {
+  "n": "timestamp_chat",
+  "id": "1726300000:The Whispers 2",
+  "reason": "timestamp_chat"
+ },
+ {
+  "n": "timestamp_chat no chat",
+  "id": "1726300000:unknown",
+  "reason": "timestamp_chat"
+ },
+ {
+  "n": "timestamp_chat slash in chat",
+  "id": "5:a/b",
+  "reason": "timestamp_chat"
+ },
+ {
+  "n": "field flat",
+  "id": "sensor.kiwi_weight",
+  "reason": "field:entity_id"
+ },
+ {
+  "n": "field nested",
+  "id": "01HXYZ",
+  "reason": "field:context.id"
+ },
+ {
+  "n": "field nested missing",
+  "id": null,
+  "reason": "field:context.id:missing"
+ },
+ {
+  "n": "field blank value",
+  "id": null,
+  "reason": "field:entity_id:missing"
+ },
+ {
+  "n": "field not specified",
+  "id": null,
+  "reason": "field:no_field_specified"
+ },
+ {
+  "n": "field numeric",
+  "id": "42",
+  "reason": "field:n"
+ },
+ {
+  "n": "custom health-metrics",
+  "id": "sensor.devin_s_s25_steps:2026-09-14T10:00:00+00:00",
+  "reason": "custom"
+ },
+ {
+  "n": "custom int_ts chat",
+  "id": "1726300000:grp",
+  "reason": "custom"
+ },
+ {
+  "n": "custom missing ts leading colon",
+  "id": null,
+  "reason": "custom:empty_render"
+ },
+ {
+  "n": "custom all empty",
+  "id": null,
+  "reason": "custom:empty_render"
+ },
+ {
+  "n": "custom unknown token",
+  "id": null,
+  "reason": "custom:render_error"
+ },
+ {
+  "n": "custom literal text",
+  "id": "dev-abc-x",
+  "reason": "custom"
+ },
+ {
+  "n": "custom slash",
+  "id": "p_q",
+  "reason": "custom"
+ },
+ {
+  "n": "custom ts raw",
+  "id": "1726300000.75",
+  "reason": "custom"
+ },
+ {
+  "n": "unknown mode",
+  "id": null,
+  "reason": "unknown_mode"
+ },
+ {
+  "n": "float big",
+  "id": "1e+16",
+  "reason": "custom"
+ },
+ {
+  "n": "float just under sci",
+  "id": "1000000000000000.0",
+  "reason": "custom"
+ },
+ {
+  "n": "float small",
+  "id": "1e-05",
+  "reason": "custom"
+ },
+ {
+  "n": "float just over small",
+  "id": "0.0001",
+  "reason": "custom"
+ },
+ {
+  "n": "float trailing zero",
+  "id": "1726300000.0",
+  "reason": "custom"
+ },
+ {
+  "n": "float many digits",
+  "id": "0.1",
+  "reason": "custom"
+ },
+ {
+  "n": "float third",
+  "id": "0.3333333333333333",
+  "reason": "custom"
+ },
+ {
+  "n": "float negative",
+  "id": "-2.5",
+  "reason": "custom"
+ },
+ {
+  "n": "float sci negative",
+  "id": "1.5e-07",
+  "reason": "custom"
+ },
+ {
+  "n": "field float value",
+  "id": "42.5",
+  "reason": "field:v"
+ },
+ {
+  "n": "field float sci",
+  "id": "1e+20",
+  "reason": "field:v"
+ },
+ {
+  "n": "int stays int",
+  "id": "7",
+  "reason": "field:v"
+ }
+]
