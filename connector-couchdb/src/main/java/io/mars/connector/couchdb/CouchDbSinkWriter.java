@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -130,7 +131,7 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
             return;
         }
 
-        List<ObjectNode> pending = new ArrayList<>(buffer);
+        List<ObjectNode> pending = collapseById(buffer);
         buffer.clear();
 
         for (int attempt = 1; attempt <= maxRetries && !pending.isEmpty(); attempt++) {
@@ -182,6 +183,41 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
         }
 
         lastFlush = System.currentTimeMillis();
+    }
+
+    /**
+     * Collapses documents that target the same {@code _id}, keeping the last.
+     *
+     * <p>Without this, an id strategy that maps many records onto few documents --
+     * which is exactly what a current-state projection is, e.g. id.mode=field on a
+     * device id -- puts several writes for one {@code _id} into a single
+     * {@code _bulk_docs}. CouchDB accepts the first and rejects the rest as
+     * conflicts, and retrying cannot help: re-reading {@code _rev} still leaves two
+     * documents competing for one id in the same request, so the batch conflicts
+     * forever and the job dies on its next checkpoint.
+     *
+     * <p>Keeping the last is also the correct answer. Records arrive in order, and
+     * writing them one at a time would leave the last one in place; collapsing
+     * reaches the same end state in one request instead of N.
+     *
+     * <p>Documents with no {@code _id} are server-assigned and each is distinct, so
+     * they pass through untouched.
+     */
+    static List<ObjectNode> collapseById(List<ObjectNode> docs) {
+        LinkedHashMap<String, ObjectNode> byId = new LinkedHashMap<>();
+        List<ObjectNode> autoId = new ArrayList<>();
+        for (ObjectNode doc : docs) {
+            String id = doc.path("_id").asText(null);
+            if (id == null || id.isEmpty()) {
+                autoId.add(doc);
+            } else {
+                byId.put(id, doc);   // later record replaces the earlier one
+            }
+        }
+        List<ObjectNode> out = new ArrayList<>(byId.size() + autoId.size());
+        out.addAll(byId.values());
+        out.addAll(autoId);
+        return out;
     }
 
     /** Re-reads {@code _rev} for each conflicted document so the next attempt is an update. */
