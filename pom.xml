@@ -16,6 +16,7 @@
     <module>connector-sdk</module>
     <module>connector-couchdb</module>
     <module>connector-http</module>
+    <module>connector-homeassistant</module>
     <module>udf-ollama</module>
   </modules>
 
