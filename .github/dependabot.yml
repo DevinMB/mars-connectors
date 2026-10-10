@@ -1,6 +1,8 @@
 # Weekly update PRs, grouped. Flink artifacts are left out of the routine group:
 # a Flink upgrade must match the cluster's version and is done deliberately.
 version: 2
+# Groups take minor and patch updates only. Each major upgrade arrives as its own
+# PR, so one breaking change cannot hold back the safe updates grouped with it.
 updates:
   - package-ecosystem: maven
     directory: /
@@ -17,6 +19,7 @@ updates:
     groups:
       libraries:
         patterns: ["*"]
+        update-types: [minor, patch]
 
   - package-ecosystem: github-actions
     directory: /
@@ -30,3 +33,4 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+        update-types: [minor, patch]
