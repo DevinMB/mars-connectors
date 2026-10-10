@@ -1,0 +1,5 @@
+# The connector JARs and nothing else. Not something you run: the MARS Flink image
+# build copies /jars out of it, so each Flink image records exactly which
+# connectors it was built with, by digest.
+FROM scratch
+COPY dist/ /jars/

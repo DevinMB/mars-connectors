@@ -1,0 +1,59 @@
+name: Publish
+
+# Every merge to main publishes the JARs as ghcr.io/devinmb/mars-connectors,
+# tagged with the commit. The MARS Flink image build pins one by digest.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  jars:
+    name: Publish connector JARs
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/devinmb/mars-connectors
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - run: mvn -B -q verify
+      # The shaded JARs only. The SDK is compiled into each of them, and the
+      # original-* files are the unshaded inputs to shading.
+      - name: Collect JARs
+        run: |
+          mkdir dist
+          for m in connector-couchdb connector-homeassistant connector-http udf-ollama; do
+            cp "$m"/target/"$m"-*.jar dist/
+          done
+          rm -f dist/original-* dist/*-sources.jar dist/*-javadoc.jar
+          ls -l dist
+          test "$(ls dist | wc -l)" -eq 4
+      - name: Build and push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          docker build -f Dockerfile.jars \
+            --label org.opencontainers.image.source="https://github.com/$REPO" \
+            --label org.opencontainers.image.revision="$SHA" \
+            -t "$IMAGE:sha-$SHA" -t "$IMAGE:main" .
+          docker push "$IMAGE:sha-$SHA"
+          docker push "$IMAGE:main"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:sha-$SHA")
+          echo "### Published" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$digest\`" >> "$GITHUB_STEP_SUMMARY"
