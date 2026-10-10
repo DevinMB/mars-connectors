@@ -1,0 +1,24 @@
+# Weekly update PRs, grouped. Flink artifacts are left out of the routine group:
+# a Flink upgrade must match the cluster's version and is done deliberately.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    ignore:
+      - dependency-name: "org.apache.flink:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    groups:
+      libraries:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
