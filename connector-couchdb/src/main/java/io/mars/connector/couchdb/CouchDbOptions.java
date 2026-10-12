@@ -68,6 +68,19 @@ public final class CouchDbOptions {
             .withDescription("Log and skip documents that still fail after retries instead of "
                     + "failing the job. Off by default: silent data loss is worse than a restart.");
 
+    public static final ConfigOption<String> DELETE_MODE = ConfigOptions.key("sink.delete-mode")
+            .stringType().defaultValue("reject")
+            .withDescription("What to do with a DELETE row. 'reject' (default): a query that can "
+                    + "produce one is refused at submission. 'ignore': the row is dropped and the "
+                    + "document stays. Use 'ignore' for joins and aggregations, which retract a row "
+                    + "and immediately write its replacement under the same _id; a replay can then "
+                    + "never delete anything.");
+
+    public static final ConfigOption<Boolean> STAMP_KEY = ConfigOptions.key("doc.stamp-key")
+            .booleanType().defaultValue(true)
+            .withDescription("Add the record key to every document as 'kafka-key', as the Python "
+                    + "sinks did. Turn off when documents must match an existing shape exactly.");
+
     public static final ConfigOption<Duration> HTTP_TIMEOUT = ConfigOptions.key("http.timeout")
             .durationType().defaultValue(Duration.ofSeconds(30))
             .withDescription("Per-request HTTP timeout.");

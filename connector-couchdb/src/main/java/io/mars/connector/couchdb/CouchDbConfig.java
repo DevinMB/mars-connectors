@@ -22,11 +22,16 @@ final class CouchDbConfig implements Serializable {
     final int maxRetries;
     final boolean ignoreWriteErrors;
     final Duration httpTimeout;
+    // Drop DELETE (and UPDATE_BEFORE) rows instead of refusing plans that make them.
+    final boolean ignoreDeletes;
+    // Add the record key to every document as "kafka-key".
+    final boolean stampKey;
 
     CouchDbConfig(String url, String db, String username, String password,
                   DocIdStrategy.Mode idMode, String idField, String idTemplate,
                   int docIndex, int keyIndex, int batchSize, Duration flushInterval,
-                  int maxRetries, boolean ignoreWriteErrors, Duration httpTimeout) {
+                  int maxRetries, boolean ignoreWriteErrors, Duration httpTimeout,
+                  boolean ignoreDeletes, boolean stampKey) {
         this.url = url;
         this.db = db;
         this.username = username;
@@ -41,5 +46,7 @@ final class CouchDbConfig implements Serializable {
         this.maxRetries = maxRetries;
         this.ignoreWriteErrors = ignoreWriteErrors;
         this.httpTimeout = httpTimeout;
+        this.ignoreDeletes = ignoreDeletes;
+        this.stampKey = stampKey;
     }
 }
