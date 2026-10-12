@@ -72,6 +72,15 @@ public final class CouchDbConnectorManifest implements MarsConnector {
                                 .label("Ignore write errors").group("Write behaviour").defaultValue("false")
                                 .help("Log and skip failed documents instead of failing the job. "
                                         + "Leaving this off is strongly recommended.").build(),
+                        OptionSpec.builder("sink.delete-mode", OptionType.ENUM)
+                                .label("Deletes").group("Write behaviour").defaultValue("reject")
+                                .choices("reject", "ignore")
+                                .help("'ignore' accepts queries that retract rows, such as joins and "
+                                        + "aggregations, and drops the delete; the replacement row "
+                                        + "overwrites the document. Nothing is ever deleted.").build(),
+                        OptionSpec.builder("doc.stamp-key", OptionType.BOOLEAN)
+                                .label("Add kafka-key to documents").group("Schema").defaultValue("true")
+                                .help("Off when documents must match an existing shape exactly.").build(),
                         OptionSpec.builder("http.timeout", OptionType.DURATION)
                                 .label("HTTP timeout").group("Write behaviour").defaultValue("30s").build()))
                 .columns(List.of(

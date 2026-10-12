@@ -46,6 +46,8 @@ public final class CouchDbDynamicTableSinkFactory implements DynamicTableSinkFac
         s.add(CouchDbOptions.MAX_RETRIES);
         s.add(CouchDbOptions.IGNORE_WRITE_ERRORS);
         s.add(CouchDbOptions.HTTP_TIMEOUT);
+        s.add(CouchDbOptions.DELETE_MODE);
+        s.add(CouchDbOptions.STAMP_KEY);
         return s;
     }
 
@@ -82,6 +84,12 @@ public final class CouchDbDynamicTableSinkFactory implements DynamicTableSinkFac
                     + "' (configurable via '" + CouchDbOptions.KEY_COLUMN.key() + "').");
         }
 
+        String deleteMode = cfg.get(CouchDbOptions.DELETE_MODE).trim().toLowerCase();
+        if (!deleteMode.equals("reject") && !deleteMode.equals("ignore")) {
+            throw new IllegalArgumentException("Unknown '" + CouchDbOptions.DELETE_MODE.key() + "' value '"
+                    + deleteMode + "'. Expected 'reject' or 'ignore'.");
+        }
+
         CouchDbConfig config = new CouchDbConfig(
                 cfg.get(CouchDbOptions.URL),
                 cfg.get(CouchDbOptions.DB),
@@ -96,7 +104,9 @@ public final class CouchDbDynamicTableSinkFactory implements DynamicTableSinkFac
                 cfg.get(CouchDbOptions.FLUSH_INTERVAL),
                 cfg.get(CouchDbOptions.MAX_RETRIES),
                 cfg.get(CouchDbOptions.IGNORE_WRITE_ERRORS),
-                cfg.get(CouchDbOptions.HTTP_TIMEOUT));
+                cfg.get(CouchDbOptions.HTTP_TIMEOUT),
+                deleteMode.equals("ignore"),
+                cfg.get(CouchDbOptions.STAMP_KEY));
 
         return new CouchDbDynamicTableSink(config);
     }

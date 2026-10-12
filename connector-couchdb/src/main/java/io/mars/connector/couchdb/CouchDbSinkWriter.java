@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.metrics.Counter;
+import org.apache.flink.types.RowKind;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.table.data.RowData;
 import org.slf4j.Logger;
@@ -47,6 +48,8 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
     private final Counter conflictsResolved;
     private final Counter documentsFailed;
     private final Counter autoIdFallbacks;
+    private final Counter deletesIgnored;
+    private final boolean stampKey;
 
     CouchDbSinkWriter(CouchDbConfig config, SinkWriterMetricGroup metricGroup) throws IOException {
         this.client = new CouchDbClient(
@@ -67,11 +70,19 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
         this.conflictsResolved = metricGroup.counter("couchdbConflictsResolved");
         this.documentsFailed = metricGroup.counter("couchdbDocumentsFailed");
         this.autoIdFallbacks = metricGroup.counter("couchdbAutoIdFallbacks");
+        this.deletesIgnored = metricGroup.counter("couchdbDeletesIgnored");
+        this.stampKey = config.stampKey;
     }
 
     @Override
     public void write(RowData element, Context context) throws IOException, InterruptedException {
         if (element == null || element.isNullAt(docIndex)) {
+            return;
+        }
+        // Only reachable with sink.delete-mode=ignore (otherwise the plan is refused):
+        // the replacement row that follows overwrites the document instead.
+        if (isRetraction(element.getRowKind())) {
+            deletesIgnored.inc();
             return;
         }
         String rawDoc = element.getString(docIndex).toString();
@@ -101,8 +112,11 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
 
         ObjectNode doc = (ObjectNode) parsed;
 
-        // Matches the Python sinks: the Kafka key is always preserved on the document.
-        doc.put("kafka-key", kafkaKey);
+        // Matches the Python sinks: the Kafka key is preserved on the document, unless
+        // documents must keep an existing shape exactly (doc.stamp-key=false).
+        if (stampKey) {
+            doc.put("kafka-key", kafkaKey);
+        }
 
         DocIdStrategy.Result id = idStrategy.compute(doc, kafkaKey);
         if (id.hasId()) {
@@ -203,6 +217,11 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
      * <p>Documents with no {@code _id} are server-assigned and each is distinct, so
      * they pass through untouched.
      */
+    /** Rows that withdraw an earlier one; never written, since nothing here deletes. */
+    static boolean isRetraction(RowKind kind) {
+        return kind == RowKind.DELETE || kind == RowKind.UPDATE_BEFORE;
+    }
+
     static List<ObjectNode> collapseById(List<ObjectNode> docs) {
         LinkedHashMap<String, ObjectNode> byId = new LinkedHashMap<>();
         List<ObjectNode> autoId = new ArrayList<>();
