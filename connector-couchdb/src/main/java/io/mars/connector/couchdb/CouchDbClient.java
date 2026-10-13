@@ -16,7 +16,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Minimal CouchDB HTTP client covering exactly what the sink needs.
@@ -104,17 +107,45 @@ final class CouchDbClient implements AutoCloseable {
         return out;
     }
 
-    /** Current {@code _rev} of a document, or null if it does not exist. */
-    String currentRev(String docId) throws IOException {
-        HttpResponse<String> r = send(request(docUrl(docId)).GET().build());
-        if (r.statusCode() == 404) {
-            return null;
+    /**
+     * Current {@code _rev} of each document, in one {@code _all_docs} round trip.
+     *
+     * <p>Ids that do not exist, or whose latest revision is a deletion, are absent from
+     * the result: both are written without a {@code _rev}.
+     */
+    Map<String, String> currentRevs(Collection<String> docIds) throws IOException {
+        Map<String, String> out = new HashMap<>();
+        if (docIds.isEmpty()) {
+            return out;
         }
+        ObjectNode payload = MAPPER.createObjectNode();
+        ArrayNode keys = payload.putArray("keys");
+        docIds.forEach(keys::add);
+
+        HttpResponse<String> r = send(request(dbUrl() + "/_all_docs")
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(payload.toString(), StandardCharsets.UTF_8))
+                .build());
         if (r.statusCode() >= 300) {
-            throw new IOException("GET " + docId + " failed with HTTP " + r.statusCode()
+            throw new IOException("_all_docs failed with HTTP " + r.statusCode()
                     + ": " + truncate(r.body()));
         }
-        return MAPPER.readTree(r.body()).path("_rev").asText(null);
+
+        JsonNode rows = MAPPER.readTree(r.body()).path("rows");
+        if (!rows.isArray()) {
+            throw new IOException("_all_docs returned unexpected body: " + truncate(r.body()));
+        }
+        for (JsonNode row : rows) {
+            // Missing ids come back as {"key":..,"error":"not_found"}, deleted ones with
+            // value.deleted=true; neither has a revision worth writing over.
+            JsonNode value = row.path("value");
+            String rev = value.path("rev").asText(null);
+            if (row.has("error") || value.path("deleted").asBoolean(false) || rev == null) {
+                continue;
+            }
+            out.put(row.path("key").asText(), rev);
+        }
+        return out;
     }
 
     private HttpRequest.Builder request(String url) {
@@ -138,10 +169,6 @@ final class CouchDbClient implements AutoCloseable {
 
     private String dbUrl() {
         return baseUrl + "/" + URLEncoder.encode(db, StandardCharsets.UTF_8);
-    }
-
-    private String docUrl(String docId) {
-        return dbUrl() + "/" + URLEncoder.encode(docId, StandardCharsets.UTF_8);
     }
 
     private static String truncate(String s) {
