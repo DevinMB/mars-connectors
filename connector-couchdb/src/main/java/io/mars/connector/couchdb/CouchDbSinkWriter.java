@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,11 +25,25 @@ import java.util.Map;
  * write rather than creating a second document. Records for which no deterministic id
  * can be computed are inserted with a server-generated id and are therefore <em>not</em>
  * idempotent -- the same trade-off the Python sinks have always made.
+ *
+ * <p>Updating an existing document needs its current {@code _rev}. The writer remembers
+ * the revision of every document it writes, so repeat updates -- the normal case for an
+ * upsert aggregate -- carry the right {@code _rev} the first time. Conflicts (a cold
+ * cache, or another writer got there first) re-read every conflicted {@code _rev} in a
+ * single {@code _all_docs} request. Both matter over a WAN: one GET per document capped
+ * a sink 25 ms from CouchDB at ~40 documents/s.
  */
 final class CouchDbSinkWriter implements SinkWriter<RowData> {
 
     private static final Logger LOG = LoggerFactory.getLogger(CouchDbSinkWriter.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /**
+     * Revisions remembered per writer. Enough for every document an hourly rollup over
+     * ~1,300 stations touches in a few hours; ~100 bytes each. A miss only costs a
+     * conflict and one batched re-read, so the bound trades nothing but speed.
+     */
+    static final int REV_CACHE_SIZE = 20_000;
 
     private final CouchDbClient client;
     private final DocIdStrategy idStrategy;
@@ -44,11 +57,23 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
     private final List<ObjectNode> buffer = new ArrayList<>();
     private long lastFlush = System.currentTimeMillis();
 
+    // Last revision this writer wrote or read, by _id. A hint, never trusted: a stale
+    // entry just conflicts and is re-read. Access-ordered, so the least recently
+    // written ids are evicted first.
+    private final Map<String, String> knownRevs =
+            new LinkedHashMap<>(1024, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                    return size() > REV_CACHE_SIZE;
+                }
+            };
+
     private final Counter documentsWritten;
     private final Counter conflictsResolved;
     private final Counter documentsFailed;
     private final Counter autoIdFallbacks;
     private final Counter deletesIgnored;
+    private final Counter revCacheHits;
     private final boolean stampKey;
 
     CouchDbSinkWriter(CouchDbConfig config, SinkWriterMetricGroup metricGroup) throws IOException {
@@ -71,6 +96,7 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
         this.documentsFailed = metricGroup.counter("couchdbDocumentsFailed");
         this.autoIdFallbacks = metricGroup.counter("couchdbAutoIdFallbacks");
         this.deletesIgnored = metricGroup.counter("couchdbDeletesIgnored");
+        this.revCacheHits = metricGroup.counter("couchdbRevCacheHits");
         this.stampKey = config.stampKey;
     }
 
@@ -147,6 +173,7 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
 
         List<ObjectNode> pending = collapseById(buffer);
         buffer.clear();
+        applyKnownRevisions(pending);
 
         for (int attempt = 1; attempt <= maxRetries && !pending.isEmpty(); attempt++) {
             List<CouchDbClient.BulkResult> results = client.bulkDocs(pending);
@@ -158,6 +185,9 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
 
                 if (r.ok) {
                     documentsWritten.inc();
+                    if (r.id != null && r.rev != null) {
+                        knownRevs.put(r.id, r.rev);
+                    }
                 } else if (r.isConflict()) {
                     // The document already exists. Re-read its _rev and try once more --
                     // the batched equivalent of the Python's upsert_doc() retry loop.
@@ -239,23 +269,47 @@ final class CouchDbSinkWriter implements SinkWriter<RowData> {
         return out;
     }
 
-    /** Re-reads {@code _rev} for each conflicted document so the next attempt is an update. */
+    /** Gives each document the revision this writer last saw for it, if any. */
+    private void applyKnownRevisions(List<ObjectNode> docs) {
+        for (ObjectNode doc : docs) {
+            String id = doc.path("_id").asText(null);
+            if (id == null || id.isEmpty() || doc.has("_rev")) {
+                continue;
+            }
+            String rev = knownRevs.get(id);
+            if (rev != null) {
+                doc.put("_rev", rev);
+                revCacheHits.inc();
+            }
+        }
+    }
+
+    /**
+     * Re-reads {@code _rev} for every conflicted document in one request so the next
+     * attempt is an update.
+     */
     private void refreshRevisions(List<ObjectNode> docs) throws IOException {
-        Map<String, String> revs = new HashMap<>();
+        List<String> ids = new ArrayList<>(docs.size());
+        for (ObjectNode doc : docs) {
+            String id = doc.path("_id").asText(null);
+            if (id != null) {
+                ids.add(id);
+            }
+        }
+        Map<String, String> revs = client.currentRevs(ids);
         for (ObjectNode doc : docs) {
             String id = doc.path("_id").asText(null);
             if (id == null) {
                 continue;
             }
-            if (!revs.containsKey(id)) {
-                revs.put(id, client.currentRev(id));
-            }
             String rev = revs.get(id);
             if (rev != null) {
                 doc.put("_rev", rev);
+                knownRevs.put(id, rev);
             } else {
                 // Deleted between the write and the re-read; drop the stale _rev so it inserts.
                 doc.remove("_rev");
+                knownRevs.remove(id);
             }
         }
     }
