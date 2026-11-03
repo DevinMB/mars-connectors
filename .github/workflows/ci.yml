@@ -25,3 +25,20 @@ jobs:
           java-version: "17"
           cache: maven
       - run: mvn -B verify
+
+  security:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/security.yml
+
+  # Shared gate (github.com/DevinMB/workflows): merges Dependabot's patch and
+  # minor updates once everything above passes, then starts the publish, which
+  # the MARS Flink image build picks up. Majors get waits-for-devin.
+  gate:
+    needs: [build, security]
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    uses: DevinMB/workflows/.github/workflows/dependabot-gate.yml@main
+    with:
+      caller-workflow: publish.yml
